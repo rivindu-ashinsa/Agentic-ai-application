@@ -1,36 +1,61 @@
 # Project Title: Agentic AI Application
 
 ## Overview
-The Agentic AI Application is designed to summarize code files from a GitHub repository and generate a professional README.md file based on the extracted summaries. It utilizes OpenAI and Hugging Face models for natural language processing tasks.
+The Agentic AI Application summarizes code files from GitHub repositories and generates professional README files using OpenAI and Hugging Face models for NLP tasks.
 
 ## Key Features
-- Fetches code files from a specified GitHub repository.
-- Summarizes the content of each file to extract key details.
-- Generates a well-structured README.md file based on the summaries.
+- GitHub repository code fetching
+- File content summarization
+- Automated README generation
 
 ## Tech Stack
 - Python
 - OpenAI API
 - Hugging Face API
 - Requests library
-- dotenv for environment variable management
+- dotenv
 
 ## Project Structure
 ```
 .
-├── .env # Environment variables
-├── .gitignore # Git ignore file
-├── GENERATED_README.md # Automatically generated README file
-├── hf_models.py # Contains functions for interacting with Hugging Face models
-├── main.py # Main application logic
-├── README.md # This README file
-├── requirements.txt # Project dependencies
-└── scraper.py # Fetches code from GitHub repositories
-
+├── .env                  # Environment variables
+├── .gitignore           # Git ignore file
+├── GENERATED_README.md  # Auto-generated README
+├── hf_models.py        # Hugging Face integration
+├── main.py             # Core application logic
+├── README.md           # Project documentation
+├── requirements.txt    # Dependencies
+└── scraper.py         # GitHub code fetcher
 ```
 
-## Setup Instructions
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd Agentic-ai-application
+## Setup
+1. Clone and navigate:
+```bash
+git clone <repository-url>
+cd Agentic-ai-application
+```
+
+2. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+3. Configure environment:
+```
+OPEN_AI_KEY=<your_openai_key>
+GITHUB_TOKEN=<your_github_token>
+HF_TOKEN=<your_huggingface_token>
+```
+
+## Usage
+Execute:
+```bash
+python main.py
+```
+Note: Configure repository URL in main.py's app.invoke method.
+
+## Contributing
+Issues and pull requests welcome.
+
+## License
+MIT License
