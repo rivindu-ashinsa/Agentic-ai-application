@@ -31,6 +31,7 @@ def fetch_repo_code(repo_url):
     return get_files()
 
 
-files = fetch_repo_code("https://github.com/rivindu-ashinsa/Doc-Drafter")
-print(f"Fetched {len(files)} files.")
-print("Example:", files[0]['path'])
+# files = fetch_repo_code("https://github.com/rivindu-ashinsa/Doc-Drafter")
+# print(f"Fetched {len(files)} files.")
+# print(type(files))
+# print("Example:", type(files[2]))
