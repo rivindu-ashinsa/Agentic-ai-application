@@ -1,5 +1,5 @@
-from langgraph.graph import StateGraph, END, START  
-from typing import TypedDict, List
+from langgraph.graph import StateGraph, END, START, add_messages  
+from typing import TypedDict, List, Annotated
 from langchain_core.messages import HumanMessage, SystemMessage
 from openai import OpenAI
 import os 
@@ -22,7 +22,7 @@ def call_summarization_agent(message_content):
     messages=[
         {
         "role": "user",
-        "content": summary_extraction_prompt + " \n" + message_content
+        "content": summary_extraction_prompt + " \n" + "```" + message_content + "```"
         }
     ]
     )
@@ -30,76 +30,72 @@ def call_summarization_agent(message_content):
 
 
 summary_extraction_prompt = """
-You are an intelligent code summarizer that extracts the most relevant information from a given source code file.
+You are a code summarizer that extracts key details from a source file to help generate a README.md.
 
-I will provide you with the **full content of a single file** from a GitHub repository.
+Analyze the file and summarize only the most important info.
 
-Your task is to analyze the file carefully and return **only the information that would be useful for generating a README.md** for the overall project.
-
-Focus on identifying and summarizing:
-1. **File Purpose:** Explain what this file does or what its main responsibility is.
-2. **Key Functions or Classes:** List important functions/classes with a one-line description each.
-3. **Dependencies/Imports:** Mention any key libraries, frameworks, or internal modules it depends on.
-4. **Inputs and Outputs:** Describe what kind of data it takes in and what it returns or produces.
-5. **Core Logic or Algorithms:** Summarize any special or unique logic, algorithms, or workflows implemented.
-6. **Connections:** Describe how this file interacts with other modules, APIs, or external systems.
-7. **Configurations or Constants:** Note any critical parameters, environment variables, or constant definitions.
-8. **Entry Point:** If it can be executed directly (like `main()` or similar), explain how execution begins.
-
-Return your answer strictly in the following **JSON format**:
+Return in this JSON format:
 {
-    "file_name": "",
-    "purpose": "",
-    "key_components": [],
-    "dependencies": [],
-    "inputs_outputs": "",
-    "important_logic": "",
-    "connections": "",
-    "configurations": "",
-    "entry_point": ""
+  "file_name": "",
+  "purpose": "",
+  "key_components": [],
+  "dependencies": [],
+  "inputs_outputs": "",
+  "important_logic": "",
+  "connections": "",
+  "configurations": "",
+  "entry_point": ""
 }
 
-Here is the file content:
-<insert file content here>
+Guidelines:
+- "purpose": what this file mainly does.
+- "key_components": main functions/classes (short description each).
+- "dependencies": imported libraries or modules.
+- "inputs_outputs": main inputs/outputs handled.
+- "important_logic": notable algorithms or workflows.
+- "connections": links to other modules/APIs.
+- "configurations": constants or env vars.
+- "entry_point": how execution starts if applicable.
+
+File content:
+
 """
 
 
 class AgentState(TypedDict):
+    # repo_url: Annotated[str, add_messages] 
     repo_url : str
     file_summaries : List[SystemMessage]
     file_count : int
     i : int
     files : List[dict]
-    current_summarizing_file : str
     
 
-def intialization(state: AgentState) -> AgentState:
-    state['files'] = fetch_repo_code(state['repo_url'])
-    state['file_count'] = len(state['files'])
-    state['i'] = 0
-    return state
-
-
+def initialization(state: AgentState):
+    files = fetch_repo_code(state["repo_url"])
+    return {
+        "files": files,
+        "file_count": len(files),
+        "i": 0
+    }
 
 def summarize_the_current_file(state: AgentState):
-    current_file = state['files'][state['i']]
+    current_file = state["files"][state["i"]]
     file_name = current_file.get("path", "unknown_file")
     file_content = current_file.get("content", "")
 
-    # Combine the filename and content into the prompt
     message_content = f"File name: {file_name}\n\n{file_content}"
-
     summarized_file = call_summarization_agent(message_content)
     print(summarized_file)
 
-    # (Optional) store the summary for later use
-    if "file_summaries" not in state:
-        state["file_summaries"] = []
-    state["file_summaries"].append(summarized_file)
+    updated_summaries = state.get("file_summaries", []) + [summarized_file]
+    next_index = state["i"] + 1
 
-    # Move to next file
-    state['i'] += 1
-    return state
+    return {
+        "file_summaries": updated_summaries,
+        "i": next_index
+    }
+
 
 
 def should_continue(state: AgentState) -> AgentState:
@@ -111,15 +107,8 @@ def should_continue(state: AgentState) -> AgentState:
 
 
 def export_readme(state: AgentState):
-    """
-    This function takes all the summarized information of files in the repository
-    and generates a professional README.md file using the LLM.
-    """
-
-    # Combine all summaries from the agent
     summaries_text = "\n\n".join(state.get("file_summaries", []))
 
-    # Prompt to instruct the model to generate a README
     readme_generation_prompt = f"""
     You are an intelligent documentation generator.
     I will provide you with structured summaries of all files from a GitHub repository.
@@ -128,23 +117,19 @@ def export_readme(state: AgentState):
     and professional **README.md** for the repository.
 
     ### The README should include:
-    1. **Project Title and Overview:** Describe what the project is about.
-    2. **Key Features:** List important functionalities or modules.
-    3. **Tech Stack:** Mention main technologies, frameworks, and libraries used.
-    4. **Project Structure:** Summarize what each major file or folder does (based on summaries provided).
-    5. **Setup Instructions:** (If any dependencies or setup steps are mentioned in summaries)
-    6. **Usage:** Describe how to run or use the project.
-    7. **Contributing (Optional):** Add if it seems relevant.
-    8. **License (Optional):** Add if license info appears.
-    
-    Be concise, professional, and well-structured.
-    Use Markdown formatting properly (headings, code blocks, bullet points, etc.).
+    1. **Project Title and Overview**
+    2. **Key Features**
+    3. **Tech Stack**
+    4. **Project Structure**
+    5. **Setup Instructions**
+    6. **Usage**
+    7. **Contributing (Optional)**
+    8. **License (Optional)**
 
     Here are the summarized file details:
     {summaries_text}
     """
 
-    # Call the model
     completion = client.chat.completions.create(
         model="x-ai/grok-code-fast-1",
         messages=[{"role": "user", "content": readme_generation_prompt}]
@@ -152,17 +137,16 @@ def export_readme(state: AgentState):
 
     readme_content = completion.choices[0].message.content
 
-    # Export to README.md
     with open("GENERATED_README.md", "w", encoding="utf-8") as f:
         f.write(readme_content)
 
     print("\n✅ README.md file generated successfully as 'GENERATED_README.md'")
-    return state
+    return {"readme_content": readme_content}
 
 
 graph = StateGraph(AgentState)
 
-graph.add_node("Initialization", intialization)
+graph.add_node("Initialization", initialization)
 graph.add_edge(START, "Initialization")
 graph.add_node("summarize", summarize_the_current_file)
 graph.add_edge("Initialization", "summarize")
