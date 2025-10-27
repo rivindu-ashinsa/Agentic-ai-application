@@ -159,7 +159,6 @@ graph.add_conditional_edges(
     }
 )
 graph.add_node("Export_README", export_readme)
-graph.add_edge("summarize", "Export_README")
 graph.add_edge("Export_README", END)
 app = graph.compile()
 
