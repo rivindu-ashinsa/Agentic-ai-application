@@ -1,11 +1,13 @@
-from langgraph.graph import StateGraph, END, START, add_messages  
-from typing import TypedDict, List, Annotated
-from langchain_core.messages import HumanMessage, SystemMessage
+from langgraph.graph import StateGraph, END, START
+from typing import TypedDict, List
+from langchain_core.messages import SystemMessage
 from openai import OpenAI
 import os 
 from scraper import fetch_repo_code
+from hf_models import call_hf_summarization_agent
 
 OPEN_AI_KEY = os.getenv("OPEN_AI_KEY")
+
 client = OpenAI(
   base_url="https://openrouter.ai/api/v1",
   api_key="" + OPEN_AI_KEY,
@@ -18,7 +20,7 @@ def call_summarization_agent(message_content):
         "X-Title": "<YOUR_SITE_NAME>", # Optional. Site title for rankings on openrouter.ai.
     },
     extra_body={},
-    model="x-ai/grok-code-fast-1",
+    model="qwen/qwen3-vl-32b-instruct",
     messages=[
         {
         "role": "user",
@@ -85,7 +87,7 @@ def summarize_the_current_file(state: AgentState):
     file_content = current_file.get("content", "")
 
     message_content = f"File name: {file_name}\n\n{file_content}"
-    summarized_file = call_summarization_agent(message_content)
+    summarized_file = call_hf_summarization_agent(summary_extraction_prompt, message_content)
     print(summarized_file)
 
     updated_summaries = state.get("file_summaries", []) + [summarized_file]
@@ -131,7 +133,7 @@ def export_readme(state: AgentState):
     """
 
     completion = client.chat.completions.create(
-        model="x-ai/grok-code-fast-1",
+        model="openrouter/andromeda-alpha",
         messages=[{"role": "user", "content": readme_generation_prompt}]
     )
 
@@ -142,6 +144,54 @@ def export_readme(state: AgentState):
 
     print("\n✅ README.md file generated successfully as 'GENERATED_README.md'")
     return {"readme_content": readme_content}
+
+def export_readme_hf(state: AgentState):
+    """
+    Generate a professional README.md using Hugging Face DeepSeek model
+    based on the summarized file information in the state.
+    """
+    summaries_text = "\n\n".join(state.get("file_summaries", []))
+
+    readme_generation_prompt = f"""
+    You are an intelligent documentation generator.
+    I will provide you with structured summaries of all files from a GitHub repository.
+
+    Your task is to analyze all the provided information and generate a clean, well-formatted,
+    and professional **README.md** for the repository.
+
+    ### The README should include:
+    1. **Project Title and Overview**
+    2. **Key Features**
+    3. **Tech Stack**
+    4. **Project Structure**
+    5. **Setup Instructions**
+    6. **Usage**
+    7. **Contributing (Optional)**
+    8. **License (Optional)**
+
+    Here are the summarized file details:
+    {summaries_text}
+    """
+    client = OpenAI(
+    base_url="https://router.huggingface.co/v1",
+    api_key=os.environ["HF_TOKEN"],
+    )   
+
+    # Use Hugging Face InferenceClient
+    completion = client.chat.completions.create(
+        model="zai-org/GLM-4.6:novita",
+        messages=[{"role": "user", "content": readme_generation_prompt}]
+    )
+
+    readme_content = completion.choices[0].message.content
+
+    # Write to README.md
+    with open("GENERATED_README.md", "w", encoding="utf-8") as f:
+        f.write(readme_content)
+
+    print("\n✅ README.md file generated successfully as 'GENERATED_README.md'")
+    return {"readme_content": readme_content}
+
 
 
 graph = StateGraph(AgentState)
@@ -158,9 +208,9 @@ graph.add_conditional_edges(
         "exit" : "Export_README"
     }
 )
-graph.add_node("Export_README", export_readme)
+graph.add_node("Export_README", export_readme_hf)
 graph.add_edge("Export_README", END)
 app = graph.compile()
 
 
-app.invoke({"repo_url" : "https://github.com/rivindu-ashinsa/Doc-Drafter"})
+app.invoke({"repo_url" : "https://github.com/rivindu-ashinsa/Lung-Cancer-Prediction"})
