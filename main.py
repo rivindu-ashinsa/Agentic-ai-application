@@ -32,11 +32,9 @@ def call_summarization_agent(message_content):
 
 
 summary_extraction_prompt = """
-You are a code summarizer that extracts key details from a source file to help generate a README.md.
+Summarize the code for README generation.
 
-Analyze the file and summarize only the most important info.
-
-Return in this JSON format:
+Return JSON only:
 {
   "file_name": "",
   "purpose": "",
@@ -50,16 +48,16 @@ Return in this JSON format:
 }
 
 Guidelines:
-- "purpose": what this file mainly does.
-- "key_components": main functions/classes (short description each).
-- "dependencies": imported libraries or modules.
-- "inputs_outputs": main inputs/outputs handled.
-- "important_logic": notable algorithms or workflows.
-- "connections": links to other modules/APIs.
-- "configurations": constants or env vars.
-- "entry_point": how execution starts if applicable.
+- purpose: main role of the file
+- key_components: main functions/classes (1-line each)
+- dependencies: imports
+- inputs_outputs: main I/O
+- important_logic: key algorithms/flows
+- connections: links to other modules/APIs
+- configurations: constants/env vars
+- entry_point: how execution starts if any
 
-File content:
+File:
 
 """
 
@@ -112,24 +110,30 @@ def export_readme(state: AgentState):
     summaries_text = "\n\n".join(state.get("file_summaries", []))
 
     readme_generation_prompt = f"""
-    You are an intelligent documentation generator.
-    I will provide you with structured summaries of all files from a GitHub repository.
+        You are a documentation generator. Use the provided file summaries to produce a clean, structured, and professional README.md.
 
-    Your task is to analyze all the provided information and generate a clean, well-formatted,
-    and professional **README.md** for the repository.
+        Requirements:
+        - Output **only the README.md content**, with no explanations or meta-comments.
+        - Do not include phrases like “based on the information provided” or “this README includes”.
+        - Write in a concise, clear, and professional tone.
 
-    ### The README should include:
-    1. **Project Title and Overview**
-    2. **Key Features**
-    3. **Tech Stack**
-    4. **Project Structure**
-    5. **Setup Instructions**
-    6. **Usage**
-    7. **Contributing (Optional)**
-    8. **License (Optional)**
+        The README must include:
+        1. **Project Title & Overview**
+        2. **Key Features**
+        3. **Tech Stack**
+        4. **Project Structure**
+        5. **Setup Instructions**
+        6. **Usage**
+        7. **Contributing** (optional)
+        8. **License** (optional)
 
-    Here are the summarized file details:
-    {summaries_text}
+        Insert code blocks where relevant.
+
+        File summaries:
+        {summaries_text}
+
+        Generate the README now.
+
     """
 
     completion = client.chat.completions.create(
@@ -139,7 +143,7 @@ def export_readme(state: AgentState):
 
     readme_content = completion.choices[0].message.content
 
-    with open("GENERATED_README.md", "w", encoding="utf-8") as f:
+    with open("GENERATED_README_OPTIMIZED.md", "w", encoding="utf-8") as f:
         f.write(readme_content)
 
     print("\n✅ README.md file generated successfully as 'GENERATED_README.md'")
