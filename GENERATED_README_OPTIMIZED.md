@@ -1,6 +1,3 @@
-Based on the provided information, I'll generate a comprehensive README.md file for this lung cancer prediction repository.
-
-```markdown
 # MetaMorphs - Lung Cancer Prediction Model
 
 A machine learning project for predicting lung cancer outcomes using medical and demographic data, developed for the Idealize 2025 Datathon competition.
@@ -183,4 +180,3 @@ For questions or support regarding this project, please refer to the competition
 **Note**: This model processes medical data and should be used for educational/research purposes only. Clinical decisions should not be based solely on machine learning predictions without proper medical validation.
 ```
 
-This README provides a comprehensive overview of the lung cancer prediction project, including all technical details from the provided summaries, clear setup instructions, usage examples, and proper documentation structure for a professional machine learning repository.
