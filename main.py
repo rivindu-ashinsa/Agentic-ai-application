@@ -20,7 +20,7 @@ def call_summarization_agent(message_content):
         "X-Title": "<YOUR_SITE_NAME>", # Optional. Site title for rankings on openrouter.ai.
     },
     extra_body={},
-    model="qwen/qwen3-vl-32b-instruct",
+    model="minimax/minimax-m2:free",
     messages=[
         {
         "role": "user",
@@ -87,7 +87,7 @@ def summarize_the_current_file(state: AgentState):
     file_content = current_file.get("content", "")
 
     message_content = f"File name: {file_name}\n\n{file_content}"
-    summarized_file = call_hf_summarization_agent(summary_extraction_prompt, message_content)
+    summarized_file = call_summarization_agent(message_content)
     print(summarized_file)
 
     updated_summaries = state.get("file_summaries", []) + [summarized_file]
@@ -133,7 +133,7 @@ def export_readme(state: AgentState):
     """
 
     completion = client.chat.completions.create(
-        model="openrouter/andromeda-alpha",
+        model="minimax/minimax-m2:free",
         messages=[{"role": "user", "content": readme_generation_prompt}]
     )
 
@@ -179,7 +179,7 @@ def export_readme_hf(state: AgentState):
 
     # Use Hugging Face InferenceClient
     completion = client.chat.completions.create(
-        model="zai-org/GLM-4.6:novita",
+        model="minimax/minimax-m2:free",
         messages=[{"role": "user", "content": readme_generation_prompt}]
     )
 
@@ -208,7 +208,7 @@ graph.add_conditional_edges(
         "exit" : "Export_README"
     }
 )
-graph.add_node("Export_README", export_readme_hf)
+graph.add_node("Export_README", export_readme)
 graph.add_edge("Export_README", END)
 app = graph.compile()
 
