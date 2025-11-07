@@ -20,7 +20,7 @@ def call_summarization_agent(message_content):
         "X-Title": "<YOUR_SITE_NAME>", # Optional. Site title for rankings on openrouter.ai.
     },
     extra_body={},
-    model="minimax/minimax-m2:free",
+    model="x-ai/grok-code-fast-1",
     messages=[
         {
         "role": "user",
@@ -137,16 +137,16 @@ def export_readme(state: AgentState):
     """
 
     completion = client.chat.completions.create(
-        model="minimax/minimax-m2:free",
+        model="x-ai/grok-code-fast-1",
         messages=[{"role": "user", "content": readme_generation_prompt}]
     )
 
     readme_content = completion.choices[0].message.content
 
-    with open("GENERATED_README_OPTIMIZED.md", "w", encoding="utf-8") as f:
+    with open("blogify.md", "w", encoding="utf-8") as f:
         f.write(readme_content)
 
-    print("\n✅ README.md file generated successfully as 'GENERATED_README.md'")
+    print("\n✅ blogify.md file generated successfully as 'GENERATED_README.md'")
     return {"readme_content": readme_content}
 
 def export_readme_hf(state: AgentState):
@@ -183,17 +183,17 @@ def export_readme_hf(state: AgentState):
 
     # Use Hugging Face InferenceClient
     completion = client.chat.completions.create(
-        model="minimax/minimax-m2:free",
+        model="x-ai/grok-code-fast-1",
         messages=[{"role": "user", "content": readme_generation_prompt}]
     )
 
     readme_content = completion.choices[0].message.content
 
     # Write to README.md
-    with open("GENERATED_README.md", "w", encoding="utf-8") as f:
+    with open("limuthu-repo.md", "w", encoding="utf-8") as f:
         f.write(readme_content)
 
-    print("\n✅ README.md file generated successfully as 'GENERATED_README.md'")
+    print("\n✅ limuthu-repo.md file generated successfully as 'GENERATED_README.md'")
     return {"readme_content": readme_content}
 
 
@@ -217,4 +217,4 @@ graph.add_edge("Export_README", END)
 app = graph.compile()
 
 
-app.invoke({"repo_url" : "https://github.com/rivindu-ashinsa/Lung-Cancer-Prediction"})
+app.invoke({"repo_url" : "https://github.com/limmaXD/Project_Hazel"}, {"recursion_limit": 100})

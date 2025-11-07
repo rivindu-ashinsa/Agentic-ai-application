@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+
 def chunk_text(text, max_chars=2000):
     """Split text into smaller chunks for API requests"""
     chunks = []
